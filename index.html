@@ -1,0 +1,176 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Конструктор тренажёров для Холста</title><style>
+*{box-sizing:border-box}body{margin:0;font:17px/1.45 Inter,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1b1b1f;background:#f4f3fb}
+header{background:#6d5fd3;color:#fff;padding:16px 22px}header h1{margin:0;font-size:24px}header p{margin:4px 0 0;opacity:.9}
+main{max-width:1100px;margin:0 auto;padding:18px}
+.card{background:#fff;border:2px solid #d9d5f3;border-radius:14px;padding:16px 18px;margin:0 0 16px}
+.card h2{margin:0 0 8px;font-size:20px}.step{display:inline-block;background:#6d5fd3;color:#fff;border-radius:50%;width:30px;height:30px;line-height:30px;text-align:center;margin-right:8px;font-weight:700}
+label{display:block;font-weight:600;margin:10px 0 4px}label small{font-weight:400;color:#5b5b66}
+input[type=text],textarea,select{width:100%;font:inherit;padding:8px 10px;border:2px solid #b9b2ea;border-radius:10px;background:#fff}
+textarea{min-height:120px;resize:vertical;font-family:inherit}textarea.sm{min-height:60px}
+.help{background:#f6f4ff;border-left:4px solid #6d5fd3;padding:8px 12px;border-radius:8px;margin:8px 0;font-size:15.5px;white-space:pre-wrap}
+.help code{background:#e9e5fb;padding:1px 5px;border-radius:5px;font-family:Consolas,Menlo,monospace}
+.btn{font:inherit;font-weight:700;padding:9px 16px;border-radius:10px;border:0;background:#6d5fd3;color:#fff;cursor:pointer;margin:4px 6px 4px 0}
+.btn.g{background:#fff;color:#4a3fc0;border:2px solid #8f86d6}.btn.r{background:#fff;color:#c0261c;border:2px solid #e3a9a4}.btn.big{font-size:19px;padding:12px 22px}
+.part{border:2px solid #b9b2ea;border-radius:12px;padding:12px 14px;margin:12px 0;background:#fcfbff}
+.part .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.part .top b{font-size:18px;flex:1}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chk{display:flex;gap:8px;align-items:center;font-weight:400;margin:6px 0}.chk input{width:20px;height:20px}
+iframe{width:100%;height:640px;border:2px solid #b9b2ea;border-radius:12px;background:#fff}
+.ok{color:#2c7a45;font-weight:700}.err{color:#c0261c;font-weight:700}
+details{margin:6px 0}summary{cursor:pointer;color:#4a3fc0;font-weight:600}
+@media(max-width:760px){.row2{grid-template-columns:1fr}}
+</style></head><body><header><h1>Конструктор тренажёров для Холста</h1><p>Составьте упражнение, получите код и вставьте его на доску Холста кнопкой «&lt;/&gt;» (Встроить iFrame код).</p></header><main><div class="card"><h2>Исправить готовое упражнение</h2><p>Чтобы изменить уже существующий тренажёр (например, исправить ответ), вставьте сюда его ссылку или код и нажмите «Открыть». Чтобы сделать новое упражнение, пропустите этот блок.</p><textarea id="src" class="sm" placeholder="Вставьте ссылку на тренажёр или код iFrame"></textarea><button class="btn g" id="loadbtn">Открыть для исправления</button> <span id="lstatus"></span></div><div class="card"><h2><span class="step">1</span>Название упражнения</h2><input type="text" id="title" placeholder="Например: Задание 10 · Приставки ПРЕ- и ПРИ-"></div><div class="card"><h2><span class="step">2</span>Части упражнения</h2><p>Упражнение состоит из одной или нескольких частей. У каждой части своя кнопка «Проверить».</p><div id="parts"></div><label>Добавить часть — выберите вид задания:</label><select id="newtype"></select><button class="btn" id="addbtn">+ Добавить часть</button></div><div class="card"><h2><span class="step">3</span>Проверьте, как это выглядит</h2><p id="status">Здесь появится упражнение, когда вы добавите первую часть.</p><iframe id="prev" title="Предпросмотр"></iframe></div><div class="card"><h2><span class="step">4</span>Получите код для Холста</h2><button class="btn big" id="makebtn">Получить код для Холста</button><div id="out" style="display:none"><label>Код для кнопки «&lt;/&gt;» (Встроить iFrame код) в Холсте</label><textarea id="code" class="sm" readonly></textarea><button class="btn" id="c1" data-for="code">Скопировать код</button><label>Ссылка на упражнение <small>(сохраните её, если захотите потом что-то исправить)</small></label><textarea id="link" class="sm" readonly></textarea><button class="btn g" id="c2" data-for="link">Скопировать ссылку</button></div></div></main><script>
+function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function b64e(a){var s='';for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function unpack(s){
+  if(s.charAt(0)=='z'){var st=new Blob([b64d(s.slice(1))]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return JSON.parse(await new Response(st).text())}
+  if(s.charAt(0)=='j')return JSON.parse(new TextDecoder().decode(b64d(s.slice(1))));
+  throw new Error('неизвестный формат')}
+async function pack(d){var raw=new TextEncoder().encode(JSON.stringify(d));
+  if(window.CompressionStream){var st=new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'));return 'z'+b64e(new Uint8Array(await new Response(st).arrayBuffer()))}
+  return 'j'+b64e(raw)}
+
+
+var T={
+ fill:{n:'Вставить букву или слово (выпадающий список)',hint:'Выбери в каждом пропуске верный вариант.',
+  help:'Каждая строка — отдельное слово или предложение. Пропуск пишется в квадратных скобках: первым — ПРАВИЛЬНЫЙ вариант, дальше через черту | неправильные.\nПример: <code>пр[и|е]шить</code>   <code>Маша [надела|одела] шапку.</code>\nЕсли подходят два варианта, перед вторым поставьте плюс: <code>[бывший|+бывалый|былой] парень</code>',ex:'пр[и|е]шить\nбе[с|з]шумный\nМаша [надела|одела] шапку.'},
+ segs:{n:'Выбрать написание кнопками (в предложении)',hint:'В каждом предложении выбери верное написание.',
+  help:'Каждая строка — предложение. Варианты написания — в фигурных скобках: первым ПРАВИЛЬНЫЙ, дальше через | неправильные.\nПример: <code>Работа у них явно {НЕ СПОРИТСЯ|НЕСПОРИТСЯ}.</code>',ex:'Работа у них явно {НЕ СПОРИТСЯ|НЕСПОРИТСЯ}.\nГолос {НА МИГ|НАМИГ|НА-МИГ} смолк.'},
+ commas:{n:'Расставить запятые щелчком',hint:'Щёлкни между словами, чтобы поставить запятую. Щёлкни ещё раз, чтобы убрать.',
+  help:'Каждая строка — предложение, написанное С ПРАВИЛЬНЫМИ запятыми. Ученик увидит его без запятых и расставит их сам.\nПояснение, которое появится после «Показать ответы», можно дописать после двух косых черт: <code>Стемнело, и в окнах зажглись огни. // две основы</code>\nЕсли часть запятых должна быть видна сразу — поставьте галочку ниже и пометьте запятые, которые ставит ученик, так: <code>(,)</code>',ex:'Стемнело, и в окнах зажглись огни.\nКогда солнце скрылось за горизонтом, небо потемнело.'},
+ stress:{n:'Поставить ударение (щелчок по гласной)',hint:'Щёлкни по ударной гласной в каждом слове.',
+  help:'Слова через запятую. Ударную гласную напишите ЗАГЛАВНОЙ буквой: <code>тОрты, звонИт, свЁкла</code>',ex:'тОрты, бАнты, звонИт, каталОг, свЁкла'},
+ rows:{n:'Ряды слов с пропущенной буквой (как в заданиях 9–12)',hint:'Вставь пропущенные буквы. Поставь галочку у рядов, где во всех словах пропущена одна и та же буква.',
+  help:'Каждая строка — один ряд. Пропущенную букву напишите в фигурных скобках: <code>пр{и}шить, пр{и}нарядиться, пр{и}школьный</code>\nЕсли буква не нужна, оставьте скобки пустыми: <code>скольз{}кий</code>\nГалочку «одна буква» тренажёр проверяет сам.',ex:'пр{и}шить, пр{и}нарядиться, пр{и}школьный\nчере{с}чур, бе{с}шумный, ра{с}сказать\nпр{и}ёмник, пр{и}рост, пр{е}градить'},
+ multi:{n:'Отметить галочками верные ответы',hint:'Отметь галочками все верные варианты.',
+  help:'Каждая строка — вариант ответа. Перед ПРАВИЛЬНЫМИ вариантами поставьте звёздочку: <code>*звонИт</code>',ex:'тортЫ\n*звонИт\n*кУхонный\nдОсуг'},
+ inputs:{n:'Напечатать ответ с клавиатуры (несколько предложений)',hint:'Напечатай ответ с клавиатуры.',
+  help:'Каждая строка: предложение, знак равенства и правильный ответ. Несколько допустимых ответов — через косую черту.\nПример: <code>Мама достала несколько (полотенце). = полотенец</code>\n<code>Он оказал на меня впечатление. = произвёл / произвел</code>',ex:'Мама достала несколько (полотенце). = полотенец\nСегодня погода (плохой), чем вчера. = хуже'},
+ input:{n:'Напечатать один ответ (задание с текстом)',hint:'Напечатай слово с клавиатуры.',help:'Текст задания и предложения впишите в поля «Задание» и «Строки перед заданием». Правильный ответ — в поле ниже.',ex:''},
+ choice:{n:'Выбрать один из одинаковых вариантов (кнопки)',hint:'Для каждой строки выбери ответ.',
+  help:'Сначала перечислите варианты ответа в поле «Варианты». Потом каждая строка: текст, знак равенства и правильный вариант.\nПример: <code>(не)был дома = раздельно</code>',ex:'(не)взрачный вид = слитно\n(не)был дома = раздельно'},
+ pick:{n:'Выбрать слово из нескольких (кнопки, свои варианты)',hint:'Выбери верный вариант.',
+  help:'Каждая строка — одно задание. Варианты — в фигурных скобках: первым ПРАВИЛЬНЫЙ. Вокруг можно написать текст.\nПример: <code>{тОрты|тортЫ}</code>   <code>{надеть|одеть} тёплый свитер</code>\nЕсли порядок вариантов менять нельзя, поставьте галочку ниже и отметьте правильный звёздочкой: <code>{Иксы|*клалА|опОшлить}</code>',ex:'{тОрты|тортЫ}\n{звонИт|звОнит}\n{надеть|одеть} тёплый свитер'},
+ spots:{n:'Цифры в тексте (как на экзамене)',hint:'Щёлкни по нужным цифрам.',help:'Текст с цифрами в скобках: <code>Старый рыбак (1) привыкший к капризам моря (2) молча смотрел…</code>\nПравильные цифры — в поле «Ответ».',ex:'Старый рыбак (1) привыкший к капризам моря (2) молча смотрел на горизонт.'},
+ strike:{n:'Вычеркнуть лишнее слово',hint:'Щёлкни по лишнему слову — оно зачеркнётся.',help:'Каждая строка: предложение, знак равенства и лишнее слово.\nПример: <code>Мы впервые познакомились на конференции. = впервые</code>',ex:'Мы впервые познакомились на конференции. = впервые'},
+ chips:{n:'Выбрать слова из набора',hint:'Щёлкни по всем подходящим словам.',help:'Слова через запятую. Перед теми, которые нужно выбрать, поставьте звёздочку: <code>вручит, *клала, *торты</code>',ex:'вручит, *клала, взяла, *торты'},
+ open:{n:'Свободный ответ с образцом (без проверки)',hint:'',help:'Ученик пишет ответ сам; по кнопке «Показать образец» видит ваш образец. Вопрос впишите в поле «Задание».',ex:''},
+ text:{n:'Текст для чтения (без заданий)',hint:'',help:'Просто текст; каждый абзац с новой строки.',ex:''}};
+var ORDER=['fill','rows','segs','commas','stress','multi','inputs','choice','pick','spots','input','strike','chips','open','text'];
+var parts=[];
+function $(i){return document.getElementById(i)}
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function lines(s){return s.split('\n').map(function(x){return x.trim()}).filter(function(x){return x})}
+function note(s){var i=s.lastIndexOf(' // ');return i<0?[s,null]:[s.slice(0,i).trim(),s.slice(i+4).trim()]}
+function eq(s){var i=s.lastIndexOf(' = ');return i<0?[s,'']:[s.slice(0,i).trim(),s.slice(i+3).trim()]}
+function sl(s){return s.split('/').map(function(x){return x.trim()}).filter(function(x){return x})}
+var COMMON=['h','hint','prompt','pre','type'];
+// ---------- данные тренажёра -> поля редактора
+function fromData(p){
+  var s={type:p.type,h:p.h||'',hint:p.hint||'',prompt:p.prompt||'',pre:(p.pre||[]).join('\n'),body:'',f:{},rest:{}},t=p.type,used={};
+  function u(k){used[k]=1;return p[k]}
+  if(t=='fill'){s.body=u('items').join('\n');s.f.block=!!u('block');s.f.asis=!!u('asis')}
+  else if(t=='segs'){s.body=u('items').join('\n')}
+  else if(t=='commas'){s.f.fixed=!!u('fixed');s.body=u('items').map(function(it){var x=it[0];if(s.f.fixed)x=x.replace(/¦/g,'(,)').replace(/ ⏎ /g,' / ');return x+(it[1]?' // '+it[1]:'')}).join('\n')}
+  else if(t=='stress'){s.body=u('items').join(', ')}
+  else if(t=='rows'){s.body=u('rows').join('\n');s.f.letters=u('letters').join(' ');used.ege=1}
+  else if(t=='multi'){var a=u('answer');s.body=u('rows').map(function(r,i){return (a.indexOf(String(i+1))>=0?'*':'')+r}).join('\n');s.f.plain=!!u('plain')}
+  else if(t=='inputs'){s.f.inline=!!u('inline');s.body=u('items').map(function(it){return (it[3]!=null?'@'+it[3]+'@ ':'')+it[0]+' = '+it[1].join(' / ')+(it[2]?' // '+it[2]:'')}).join('\n')}
+  else if(t=='input'){s.f.answers=u('answers').join(' / ');s.f.note=u('note')||''}
+  else if(t=='choice'){var o=u('options');s.f.options=o.join('; ');s.f.cols1=u('cols')==1;s.body=u('items').map(function(it){return it[0]+' = '+o[it[1]]+(it[2]?' // '+it[2]:'')}).join('\n')}
+  else if(t=='pick'){s.f.keep=!!u('keep');s.f.block=!!u('block');s.body=u('items').map(function(it){var ci=it[3];return ((it[0]?it[0]+' ':'')+'{'+it[1].map(function(x,i){return (ci!=null&&i==ci?'*':'')+x}).join('|')+'}'+(it[2]?' '+it[2]:'')+(it[4]?' // '+it[4]:'')).trim()}).join('\n')}
+  else if(t=='spots'){s.body=u('text').replace(/ ?⏎ ?/g,'\n');s.f.answer=u('answer')}
+  else if(t=='strike'){s.body=u('items').map(function(it){return it[0]+' = '+it[1]}).join('\n')}
+  else if(t=='chips'){s.body=u('words').join(', ')}
+  else if(t=='open'){s.f.sample=u('sample')||''}
+  else if(t=='text'){s.body=u('paras').join('\n')}
+  for(var k in p)if(!used[k]&&COMMON.indexOf(k)<0)s.rest[k]=p[k];
+  return s}
+// ---------- поля редактора -> данные тренажёра
+function toData(s){
+  var p={h:s.h,type:s.type},t=s.type,L=lines(s.body);
+  if(s.hint)p.hint=s.hint;if(s.prompt)p.prompt=s.prompt;if(s.pre.trim())p.pre=lines(s.pre);
+  for(var k in s.rest)p[k]=s.rest[k];
+  if(t=='fill'){p.items=L;if(s.f.block)p.block=true;if(s.f.asis)p.asis=true}
+  else if(t=='segs'){p.items=L}
+  else if(t=='commas'){if(s.f.fixed)p.fixed=true;p.items=L.map(function(l){var n=note(l),x=n[0];if(s.f.fixed)x=x.replace(/\s*\(,\)/g,'¦').replace(/ \/ /g,' ⏎ ');return n[1]?[x,n[1]]:[x]})}
+  else if(t=='stress'){p.items=s.body.split(/[,\n]/).map(function(x){return x.trim()}).filter(function(x){return x})}
+  else if(t=='rows'){p.rows=L;p.letters=s.f.letters.split(/[\s,;]+/).filter(function(x){return x});
+    var same=[];L.forEach(function(r,i){var m=r.match(/\{[^}]*\}/g)||[];if(m.length&&m.every(function(x){return x==m[0]}))same.push(i+1)});p.ege=same.join('')||'нет таких рядов'}
+  else if(t=='multi'){var a='';p.rows=L.map(function(l,i){if(l.charAt(0)=='*'){a+=(i+1);return l.slice(1).trim()}return l});p.answer=a;if(s.f.plain)p.plain=true}
+  else if(t=='inputs'){if(s.f.inline)p.inline=true;p.items=L.map(function(l){var lab=null,m=/^@([^@]*)@\s*/.exec(l);if(m){lab=m[1];l=l.slice(m[0].length)}var n=note(l),e=eq(n[0]),it=[e[0],sl(e[1])];
+      if(n[1]||lab!=null)it.push(n[1]);if(lab!=null)it.push(/^\d+$/.test(lab)?+lab:lab);return it})}
+  else if(t=='input'){p.answers=sl(s.f.answers);if(s.f.note)p.note=s.f.note}
+  else if(t=='choice'){var o=s.f.options.split(';').map(function(x){return x.trim()}).filter(function(x){return x});p.options=o;if(s.f.cols1)p.cols=1;
+    p.items=L.map(function(l){var n=note(l),e=eq(n[0]),i=o.indexOf(e[1]);if(i<0)throw new Error('В строке «'+l+'» после знака = должен стоять один из вариантов: '+o.join('; '));return n[1]?[e[0],i,n[1]]:[e[0],i]})}
+  else if(t=='pick'){if(s.f.keep)p.keep=true;if(s.f.block)p.block=true;
+    p.items=L.map(function(l){var n=note(l),m=/^(.*?)\{([^}]*)\}(.*)$/.exec(n[0]);if(!m)throw new Error('В строке «'+l+'» нет вариантов в фигурных скобках');
+      var ci=null,o=m[2].split('|').map(function(x,i){x=x.trim();if(x.charAt(0)=='*'){ci=i;return x.slice(1)}return x}),it=[m[1].trim(),o,m[3].trim()];
+      if(ci!=null||n[1]){it.push(ci);if(n[1])it.push(n[1])}return it})}
+  else if(t=='spots'){p.text=lines(s.body).join(' ⏎ ');p.answer=String(s.f.answer).replace(/\D/g,'')}
+  else if(t=='strike'){p.items=L.map(function(l){var e=eq(l);return [e[0],e[1]]})}
+  else if(t=='chips'){p.words=s.body.split(/[,\n]/).map(function(x){return x.trim()}).filter(function(x){return x})}
+  else if(t=='open'){p.sample=s.f.sample}
+  else if(t=='text'){p.paras=L}
+  return p}
+function check(p){ // простая проверка заполнения
+  var t=p.type,bad=function(m){throw new Error('Часть «'+(p.h||T[t].n)+'»: '+m)};
+  if(t=='fill'&&!p.items.some(function(x){return /\[[^\]]+\|[^\]]+\]/.test(x)}))bad('нет ни одного пропуска вида [верно|неверно].');
+  if(t=='segs'&&!p.items.every(function(x){return /\{[^}]+\|[^}]+\}/.test(x)}))bad('в каждой строке должны быть варианты вида {верно|неверно}.');
+  if(t=='stress')p.items.forEach(function(w){var c=0;for(var i=0;i<w.length;i++)if(w[i]!=w[i].toLowerCase())c++;if(c!=1)bad('в слове «'+w+'» должна быть ровно одна заглавная (ударная) гласная.')});
+  if(t=='rows'){if(!p.letters.length)bad('заполните поле «Буквы для выбора».');p.rows.forEach(function(r){(r.match(/\{([^}]*)\}/g)||bad('в ряду «'+r+'» нет пропусков {буква}.')).forEach(function(x){var c=x.slice(1,-1)||'–';if(p.letters.indexOf(c)<0)bad('буквы «'+c+'» нет в поле «Буквы для выбора».')})})}
+  if(t=='multi'&&!p.answer)bad('не отмечен звёздочкой ни один правильный вариант.');
+  if(t=='inputs')p.items.forEach(function(it){if(!it[1].length)bad('в строке «'+it[0]+'» после знака = нет ответа.')});
+  if(t=='input'&&!p.answers.length)bad('не заполнено поле «Правильный ответ».');
+  if(t=='strike')p.items.forEach(function(it){if(!it[1])bad('в строке «'+it[0]+'» после знака = нет лишнего слова.')});
+  if(t=='spots'&&!p.answer)bad('не заполнено поле «Ответ».');
+  if((p.items&&!p.items.length)||(p.rows&&!p.rows.length)||(p.words&&!p.words.length))bad('нет ни одной строки.')}
+function collect(){var d={title:$('title').value.trim()||'Тренажёр',parts:parts.map(toData)};d.parts.forEach(check);if(!d.parts.length)throw new Error('Добавьте хотя бы одну часть.');return d}
+// ---------- интерфейс
+function field(par,lab,val,on,big,ph){var l=el('label',null,lab),i=el(big?'textarea':'input',big==2?'sm':null);if(!big)i.type='text';i.value=val||'';if(ph)i.placeholder=ph;i.oninput=function(){on(i.value);soon()};par.appendChild(l);par.appendChild(i);return i}
+function chk(par,lab,val,on){var l=el('label','chk'),i=el('input');i.type='checkbox';i.checked=!!val;i.onchange=function(){on(i.checked);soon()};l.appendChild(i);l.appendChild(document.createTextNode(lab));par.appendChild(l)}
+function draw(){var box=$('parts');box.innerHTML='';
+  parts.forEach(function(s,i){var t=s.type,d=el('div','part'),top=el('div','top');
+    top.appendChild(el('b',null,'Часть '+(i+1)+'. '+T[t].n));
+    [['↑',function(){if(i){parts.splice(i-1,0,parts.splice(i,1)[0]);draw();soon()}}],['↓',function(){if(i<parts.length-1){parts.splice(i+1,0,parts.splice(i,1)[0]);draw();soon()}}]].forEach(function(b){var x=el('button','btn g',b[0]);x.onclick=b[1];top.appendChild(x)});
+    var del=el('button','btn r','Удалить часть');del.onclick=function(){if(confirm('Удалить эту часть?')){parts.splice(i,1);draw();soon()}};top.appendChild(del);d.appendChild(top);
+    d.appendChild(el('div','help',T[t].help));
+    var r=el('div','row2'),c1=el('div'),c2=el('div');r.appendChild(c1);r.appendChild(c2);d.appendChild(r);
+    field(c1,'Заголовок части <small>(например: Вариант 1)</small>',s.h,function(v){s.h=v});
+    field(c2,'Подсказка ученику <small>(серая строка под заголовком)</small>',s.hint,function(v){s.hint=v});
+    var more=el('details'),sm=el('summary',null,'Текст задания и строки перед ним (необязательно)');more.appendChild(sm);if(s.prompt||s.pre||t=='input'||t=='open')more.open=true;
+    field(more,'Задание <small>(формулировка, как в сборнике)</small>',s.prompt,function(v){s.prompt=v},2);
+    field(more,'Строки перед заданием <small>(например, предложения или список; каждая с новой строки)</small>',s.pre,function(v){s.pre=v},2);d.appendChild(more);
+    if(t=='rows')field(d,'Буквы для выбора <small>(через пробел; «–» означает «буква не нужна»)</small>',s.f.letters,function(v){s.f.letters=v},0,'а о е и');
+    if(t=='choice')field(d,'Варианты <small>(через точку с запятой)</small>',s.f.options,function(v){s.f.options=v},0,'слитно; раздельно');
+    if(t!='input'&&t!='open')field(d,t=='spots'||t=='text'?'Текст':'Строки упражнения',s.body,function(v){s.body=v},1,T[t].ex);
+    if(t=='spots')field(d,'Ответ <small>(цифры подряд, например 135)</small>',s.f.answer,function(v){s.f.answer=v});
+    if(t=='input'){field(d,'Правильный ответ <small>(несколько допустимых — через косую черту)</small>',s.f.answers,function(v){s.f.answers=v});field(d,'Пояснение после «Показать ответы» <small>(необязательно)</small>',s.f.note,function(v){s.f.note=v})}
+    if(t=='open')field(d,'Образец ответа',s.f.sample,function(v){s.f.sample=v},2);
+    if(t=='fill'){chk(d,'Каждая строка — с новой строки (для предложений)',s.f.block,function(v){s.f.block=v});chk(d,'Не сортировать варианты в списке по алфавиту',s.f.asis,function(v){s.f.asis=v})}
+    if(t=='commas')chk(d,'Часть запятых уже стоит в тексте; ученик ставит только помеченные (,)',s.f.fixed,function(v){s.f.fixed=v});
+    if(t=='multi')chk(d,'Не нумеровать варианты автоматически',s.f.plain,function(v){s.f.plain=v});
+    if(t=='inputs')chk(d,'Поле ответа в той же строке (для коротких заданий)',s.f.inline,function(v){s.f.inline=v});
+    if(t=='choice')chk(d,'В один столбец (для длинных предложений)',s.f.cols1,function(v){s.f.cols1=v});
+    if(t=='pick'){chk(d,'Не перемешивать варианты; правильный отмечен звёздочкой',s.f.keep,function(v){s.f.keep=v});chk(d,'Каждое задание — с новой строки',s.f.block,function(v){s.f.block=v})}
+    box.appendChild(d)})}
+function add(t){parts.push({type:t,h:parts.length?'':'',hint:T[t].hint,prompt:'',pre:'',body:'',f:t=='rows'?{letters:'а о е и'}:t=='choice'?{options:'слитно; раздельно'}:{},rest:{}});draw();soon()}
+var tm=null;function soon(){clearTimeout(tm);tm=setTimeout(preview,700)}
+var lastCode='';
+async function preview(){var st=$('status');try{var d=collect();lastCode=await pack(d);$('prev').src='t.html#'+lastCode;st.className='ok';st.textContent='Предпросмотр обновлён.';return true}
+  catch(e){st.className='err';st.textContent=e.message;return false}}
+function tUrl(){return new URL('t.html',location.href).href+'#'+lastCode}
+async function make(){if(!await preview()){$('out').style.display='none';return}
+  var u=tUrl();$('code').value='<iframe src="'+u+'" width="1260" height="900"></iframe>';$('link').value=u;$('out').style.display='';$('code').focus();$('code').select()}
+function copy(id,b){var x=$(id);x.focus();x.select();var done=function(){b.textContent='Скопировано ✓';setTimeout(function(){b.textContent=b.dataset.t},1800)};
+  if(navigator.clipboard)navigator.clipboard.writeText(x.value).then(done,function(){document.execCommand('copy');done()});else{document.execCommand('copy');done()}}
+async function load(){var s=$('src').value,st=$('lstatus');try{var D=null,m=/#([zj][A-Za-z0-9_-]{20,})/.exec(s);
+    if(m)D=await unpack(m[1]);
+    else{m=/data:text\/html;charset=utf-8;base64,([A-Za-z0-9+\/=]+)/.exec(s);if(!m)throw new Error('В поле нет ссылки на тренажёр.');
+      var h=new TextDecoder().decode(b64d(m[1])),a=h.indexOf('var D=')+6,z=h.indexOf(';\nfunction el(');D=JSON.parse(h.slice(a,z))}
+    $('title').value=D.title||'';parts=D.parts.map(fromData);draw();await preview();st.className='ok';st.textContent='Упражнение загружено: частей — '+parts.length+'. Исправьте нужное ниже и нажмите «Получить код для Холста».'}
+  catch(e){st.className='err';st.textContent='Не получилось открыть: '+(e.message||'ссылка повреждена или скопирована не полностью')+'.'}}
+window.RT=function(D){return {title:D.title,parts:D.parts.map(function(p){var d=toData(fromData(p));check(d);return d})}};
+window.addEventListener('DOMContentLoaded',function(){var sel=$('newtype');ORDER.forEach(function(t){var o=el('option',null,T[t].n);o.value=t;sel.appendChild(o)});
+  $('addbtn').onclick=function(){add(sel.value)};$('makebtn').onclick=make;$('loadbtn').onclick=load;$('title').oninput=soon;
+  ['c1','c2'].forEach(function(i){var b=$(i);b.dataset.t=b.textContent;b.onclick=function(){copy(b.dataset.for,b)}});draw()});
+</script></body></html>
