@@ -158,12 +158,12 @@ var tm=null;function soon(){clearTimeout(tm);tm=setTimeout(preview,700)}
 var lastCode='';
 async function preview(){var st=$('status');try{var d=collect();lastCode=await pack(d);$('prev').src='t.html#'+lastCode;st.className='ok';st.textContent='Предпросмотр обновлён.';return true}
   catch(e){st.className='err';st.textContent=e.message;return false}}
-function tUrl(){return new URL('t.html',location.href).href+'#'+lastCode}
+function tUrl(){return new URL('t.html',location.href).href+'?d='+lastCode}
 async function make(){if(!await preview()){$('out').style.display='none';return}
   var u=tUrl();$('code').value='<iframe src="'+u+'" width="1260" height="900"></iframe>';$('link').value=u;$('out').style.display='';$('code').focus();$('code').select()}
 function copy(id,b){var x=$(id);x.focus();x.select();var done=function(){b.textContent='Скопировано ✓';setTimeout(function(){b.textContent=b.dataset.t},1800)};
   if(navigator.clipboard)navigator.clipboard.writeText(x.value).then(done,function(){document.execCommand('copy');done()});else{document.execCommand('copy');done()}}
-async function load(){var s=$('src').value,st=$('lstatus');try{var D=null,m=/#([zj][A-Za-z0-9_-]{20,})/.exec(s);
+async function load(){var s=$('src').value,st=$('lstatus');try{var D=null,m=/(?:#|[?&]d=)([zj][A-Za-z0-9_-]{20,})/.exec(s);
     if(m)D=await unpack(m[1]);
     else{m=/data:text\/html;charset=utf-8;base64,([A-Za-z0-9+\/=]+)/.exec(s);if(!m)throw new Error('В поле нет ссылки на тренажёр.');
       var h=new TextDecoder().decode(b64d(m[1])),a=h.indexOf('var D=')+6,z=h.indexOf(';\nfunction el(');D=JSON.parse(h.slice(a,z))}
@@ -172,5 +172,5 @@ async function load(){var s=$('src').value,st=$('lstatus');try{var D=null,m=/#([
 window.RT=function(D){return {title:D.title,parts:D.parts.map(function(p){var d=toData(fromData(p));check(d);return d})}};
 window.addEventListener('DOMContentLoaded',function(){var sel=$('newtype');ORDER.forEach(function(t){var o=el('option',null,T[t].n);o.value=t;sel.appendChild(o)});
   $('addbtn').onclick=function(){add(sel.value)};$('makebtn').onclick=make;$('loadbtn').onclick=load;$('title').oninput=soon;
-  ['c1','c2'].forEach(function(i){var b=$(i);b.dataset.t=b.textContent;b.onclick=function(){copy(b.dataset.for,b)}});draw();if(/^#[zj][A-Za-z0-9_-]{20,}$/.test(location.hash)){$('src').value=location.href.replace(/index\.html#/,'t.html#').replace(/\/#/,'/t.html#');load()}});
+  ['c1','c2'].forEach(function(i){var b=$(i);b.dataset.t=b.textContent;b.onclick=function(){copy(b.dataset.for,b)}});draw();var q0=new URLSearchParams(location.search).get('d')||location.hash.slice(1);if(/^[zj][A-Za-z0-9_-]{20,}$/.test(q0)){$('src').value=new URL('t.html',location.href).href+'?d='+q0;load()}});
 </script></body></html>
