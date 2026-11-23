@@ -172,5 +172,5 @@ async function load(){var s=$('src').value,st=$('lstatus');try{var D=null,m=/#([
 window.RT=function(D){return {title:D.title,parts:D.parts.map(function(p){var d=toData(fromData(p));check(d);return d})}};
 window.addEventListener('DOMContentLoaded',function(){var sel=$('newtype');ORDER.forEach(function(t){var o=el('option',null,T[t].n);o.value=t;sel.appendChild(o)});
   $('addbtn').onclick=function(){add(sel.value)};$('makebtn').onclick=make;$('loadbtn').onclick=load;$('title').oninput=soon;
-  ['c1','c2'].forEach(function(i){var b=$(i);b.dataset.t=b.textContent;b.onclick=function(){copy(b.dataset.for,b)}});draw()});
+  ['c1','c2'].forEach(function(i){var b=$(i);b.dataset.t=b.textContent;b.onclick=function(){copy(b.dataset.for,b)}});draw();if(/^#[zj][A-Za-z0-9_-]{20,}$/.test(location.hash)){$('src').value=location.href.replace(/index\.html#/,'t.html#').replace(/\/#/,'/t.html#');load()}});
 </script></body></html>
