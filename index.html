@@ -40,7 +40,7 @@ var T={
  stress:{n:'Поставить ударение (щелчок по гласной)',hint:'Щёлкни по ударной гласной в каждом слове.',
   help:'Слова через запятую. Ударную гласную напишите ЗАГЛАВНОЙ буквой: <code>тОрты, звонИт, свЁкла</code>',ex:'тОрты, бАнты, звонИт, каталОг, свЁкла'},
  rows:{n:'Ряды слов с пропущенной буквой (как в заданиях 9–12)',hint:'Вставь пропущенные буквы. Поставь галочку у рядов, где во всех словах пропущена одна и та же буква.',
-  help:'Каждая строка — один ряд. Пропущенную букву напишите в фигурных скобках: <code>пр{и}шить, пр{и}нарядиться, пр{и}школьный</code>\nЕсли буква не нужна, оставьте скобки пустыми: <code>скольз{}кий</code>\nГалочку «одна буква» тренажёр проверяет сам.',ex:'пр{и}шить, пр{и}нарядиться, пр{и}школьный\nчере{с}чур, бе{с}шумный, ра{с}сказать\nпр{и}ёмник, пр{и}рост, пр{е}градить'},
+  help:'Каждая строка — один ряд. В фигурных скобках напишите буквы, из которых выбирает ученик: <b>первая — верная</b>, дальше через черту — неверные: <code>пр{и|е}шить, пр{и|е}нарядиться, пр{и|е}школьный</code>\nЕсли буква не нужна, поставьте тире: <code>с{–|ъ|ь}экономить</code>, <code>под{ъ|ь|–}ехать</code>\nМожно написать только верную букву — <code>пр{и}шить</code>; тогда ученик выбирает из общего списка в поле «Буквы для выбора».\nГалочку «одна буква» тренажёр проверяет сам.',ex:'пр{и|е}шить, пр{и|е}нарядиться, пр{и|е}школьный\nчере{с|з}чур, бе{с|з}шумный, ра{с|з}сказать\nпр{и|е}ёмник, пр{и|е}рост, пр{е|и}градить'},
  multi:{n:'Отметить галочками верные ответы',hint:'Отметь галочками все верные варианты.',
   help:'Каждая строка — вариант ответа. Перед ПРАВИЛЬНЫМИ вариантами поставьте звёздочку: <code>*звонИт</code>',ex:'тортЫ\n*звонИт\n*кУхонный\nдОсуг'},
  inputs:{n:'Напечатать ответ с клавиатуры (несколько предложений)',hint:'Напечатай ответ с клавиатуры.',
@@ -72,7 +72,7 @@ function fromData(p){
   else if(t=='segs'){s.body=u('items').join('\n')}
   else if(t=='commas'){s.f.fixed=!!u('fixed');s.body=u('items').map(function(it){var x=it[0];if(s.f.fixed)x=x.replace(/¦/g,'(,)').replace(/ ⏎ /g,' / ');return x+(it[1]?' // '+it[1]:'')}).join('\n')}
   else if(t=='stress'){s.body=u('items').join(', ')}
-  else if(t=='rows'){s.body=u('rows').join('\n');s.f.letters=u('letters').join(' ');used.ege=1}
+  else if(t=='rows'){s.body=u('rows').join('\n');s.f.letters=(u('letters')||[]).join(' ');used.ege=1}
   else if(t=='multi'){var a=u('answer');s.body=u('rows').map(function(r,i){return (a.indexOf(String(i+1))>=0?'*':'')+r}).join('\n');s.f.plain=!!u('plain')}
   else if(t=='inputs'){s.f.inline=!!u('inline');s.body=u('items').map(function(it){return (it[3]!=null?'@'+it[3]+'@ ':'')+it[0]+' = '+it[1].join(' / ')+(it[2]?' // '+it[2]:'')}).join('\n')}
   else if(t=='input'){s.f.answers=u('answers').join(' / ');s.f.note=u('note')||''}
@@ -117,7 +117,7 @@ function check(p){ // простая проверка заполнения
   if(t=='fill'&&!p.items.some(function(x){return /\[[^\]]+\|[^\]]+\]/.test(x)}))bad('нет ни одного пропуска вида [верно|неверно].');
   if(t=='segs'&&!p.items.every(function(x){return /\{[^}]+\|[^}]+\}/.test(x)}))bad('в каждой строке должны быть варианты вида {верно|неверно}.');
   if(t=='stress')p.items.forEach(function(w){var c=0;for(var i=0;i<w.length;i++)if(w[i]!=w[i].toLowerCase())c++;if(c!=1)bad('в слове «'+w+'» должна быть ровно одна заглавная (ударная) гласная.')});
-  if(t=='rows'){if(!p.letters.length)bad('заполните поле «Буквы для выбора».');p.rows.forEach(function(r){(r.match(/\{([^}]*)\}/g)||bad('в ряду «'+r+'» нет пропусков {буква}.')).forEach(function(x){var c=x.slice(1,-1)||'–';if(p.letters.indexOf(c)<0)bad('буквы «'+c+'» нет в поле «Буквы для выбора».')})})}
+  if(t=='rows'){p.rows.forEach(function(r){(r.match(/\{([^}]*)\}/g)||bad('в ряду «'+r+'» нет пропусков {буква}.')).forEach(function(x){var q=x.slice(1,-1);if(q.indexOf('|')>=0){if(q.split('|').filter(function(y){return y.trim()}).length<2&&q.split('|').length<2)bad('в пропуске «'+x+'» нужна хотя бы одна неверная буква.');return}var c=q||'–';if(!p.letters.length)bad('в пропуске «'+x+'» одна буква: либо допишите варианты через черту — {и|е}, либо заполните поле «Буквы для выбора».');if(p.letters.indexOf(c)<0)bad('буквы «'+c+'» нет в поле «Буквы для выбора».')})});if(!p.letters.length)delete p.letters}
   if(t=='multi'&&!p.answer)bad('не отмечен звёздочкой ни один правильный вариант.');
   if(t=='inputs')p.items.forEach(function(it){if(!it[1].length)bad('в строке «'+it[0]+'» после знака = нет ответа.')});
   if(t=='input'&&!p.answers.length)bad('не заполнено поле «Правильный ответ».');
@@ -140,7 +140,7 @@ function draw(){var box=$('parts');box.innerHTML='';
     var more=el('details'),sm=el('summary',null,'Текст задания и строки перед ним (необязательно)');more.appendChild(sm);if(s.prompt||s.pre||t=='input'||t=='open')more.open=true;
     field(more,'Задание <small>(формулировка, как в сборнике)</small>',s.prompt,function(v){s.prompt=v},2);
     field(more,'Строки перед заданием <small>(например, предложения или список; каждая с новой строки)</small>',s.pre,function(v){s.pre=v},2);d.appendChild(more);
-    if(t=='rows')field(d,'Буквы для выбора <small>(через пробел; «–» означает «буква не нужна»)</small>',s.f.letters,function(v){s.f.letters=v},0,'а о е и');
+    if(t=='rows')field(d,'Буквы для выбора <small>(общий список — только для пропусков с одной буквой; можно оставить пустым)</small>',s.f.letters,function(v){s.f.letters=v},0,'а о е и');
     if(t=='choice')field(d,'Варианты <small>(через точку с запятой)</small>',s.f.options,function(v){s.f.options=v},0,'слитно; раздельно');
     if(t!='input'&&t!='open')field(d,t=='spots'||t=='text'?'Текст':'Строки упражнения',s.body,function(v){s.body=v},1,T[t].ex);
     if(t=='spots')field(d,'Ответ <small>(цифры подряд, например 135)</small>',s.f.answer,function(v){s.f.answer=v});
@@ -153,7 +153,7 @@ function draw(){var box=$('parts');box.innerHTML='';
     if(t=='choice')chk(d,'В один столбец (для длинных предложений)',s.f.cols1,function(v){s.f.cols1=v});
     if(t=='pick'){chk(d,'Не перемешивать варианты; правильный отмечен звёздочкой',s.f.keep,function(v){s.f.keep=v});chk(d,'Каждое задание — с новой строки',s.f.block,function(v){s.f.block=v})}
     box.appendChild(d)})}
-function add(t){parts.push({type:t,h:parts.length?'':'',hint:T[t].hint,prompt:'',pre:'',body:'',f:t=='rows'?{letters:'а о е и'}:t=='choice'?{options:'слитно; раздельно'}:{},rest:{}});draw();soon()}
+function add(t){parts.push({type:t,h:parts.length?'':'',hint:T[t].hint,prompt:'',pre:'',body:'',f:t=='rows'?{letters:''}:t=='choice'?{options:'слитно; раздельно'}:{},rest:{}});draw();soon()}
 var tm=null;function soon(){clearTimeout(tm);tm=setTimeout(preview,700)}
 var lastCode='';
 async function preview(){var st=$('status');try{var d=collect();lastCode=await pack(d);$('prev').src='t.html#'+lastCode;st.className='ok';st.textContent='Предпросмотр обновлён.';return true}
