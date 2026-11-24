@@ -156,7 +156,7 @@ function draw(){var box=$('parts');box.innerHTML='';
 function add(t){parts.push({type:t,h:parts.length?'':'',hint:T[t].hint,prompt:'',pre:'',body:'',f:t=='rows'?{letters:''}:t=='choice'?{options:'слитно; раздельно'}:{},rest:{}});draw();soon()}
 var tm=null;function soon(){clearTimeout(tm);tm=setTimeout(preview,700)}
 var lastCode='';
-async function preview(){var st=$('status');try{var d=collect();lastCode=await pack(d);$('prev').src='t.html#'+lastCode;st.className='ok';st.textContent='Предпросмотр обновлён.';return true}
+async function preview(){var st=$('status');try{var d=collect();lastCode=await pack(d);$('prev').src='t.html#'+lastCode;var L=tUrl().length;if(L>7000)throw new Error('Упражнение слишком длинное: ссылка получается '+L+' знаков, а помещается не больше 7000. Разделите его на два упражнения: часть вариантов или строк оставьте здесь, а из остальных сделайте второе.');st.className='ok';st.textContent='Предпросмотр обновлён.'+(L>5000?' Упражнение длинное: ссылка '+L+' знаков из 7000 возможных. Если добавите ещё, придётся делить на два.':'');return true}
   catch(e){st.className='err';st.textContent=e.message;return false}}
 function tUrl(){return new URL('t.html',location.href).href+'?d='+lastCode}
 async function make(){if(!await preview()){$('out').style.display='none';return}
